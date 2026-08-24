@@ -1,0 +1,2 @@
+{"model_path":"models/qwen.gguf","threads":2,"context":2048,"generated_tokens":120,"seconds":10.0,"peak_rss_bytes":2400000000,"batch":256,"run_id":"run-a"}
+{"model_path":"models/qwen.gguf","threads":4,"context":2048,"generated_tokens":180,"seconds":10.0,"peak_rss_bytes":2800000000,"batch":256,"run_id":"run-b"}
