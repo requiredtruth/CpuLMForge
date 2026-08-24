@@ -17,3 +17,12 @@ Every recommendation includes its sample count, run IDs, median tokens/second, m
 Donations increase RequiredTruth development production. See [SUPPORT.md](SUPPORT.md); confirmed donors may claim a transaction hash in an issue and request a specific direction.
 
 Apache-2.0 licensed.
+
+
+## Install and run
+
+```sh
+chmod +x install.sh run.sh
+./install.sh
+./run.sh --help
+```
