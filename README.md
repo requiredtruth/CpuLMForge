@@ -6,7 +6,7 @@ CpuLMForge selects reproducible CPU-only local-model launch profiles from measur
 python -m cpulmforge examples/samples.jsonl --memory-gib 4 --minimum-tps 10
 ```
 
-Every recommendation includes its sample count, run IDs, median tokens/second, minimum tokens/second, and maximum observed RSS. Rejected profiles retain exact reasons. The tool does not benchmark hardware, infer unmeasured performance, or claim that past measurements guarantee future speed. Feed it runs collected under controlled conditions.
+Every recommendation includes its sample count, run IDs, median tokens/second, minimum tokens/second, and maximum observed RSS. Rejected profiles retain exact reasons. Non-finite measurements and constraints are invalid input and never become recommendations or non-standard JSON. The tool does not benchmark hardware, infer unmeasured performance, or claim that past measurements guarantee future speed. Feed it runs collected under controlled conditions.
 
 ## Test
 
@@ -24,10 +24,11 @@ Apache-2.0 licensed.
 ```sh
 chmod +x install.sh run.sh
 ./install.sh
-./run.sh --help
+./run.sh
+./cli.sh --help
 ```
 
 
 ## Standard launcher
 
-`./run.sh` is the normal entry point. It runs `./install.sh` automatically when setup is missing, then opens the PySide6 control panel with live output and actions for the demo, tests, repair, and stop. Use `./cli.sh` for CLI-only operation.
+`./run.sh` is the normal entry point. It runs `./install.sh` automatically when setup is missing, then opens the PySide6 control panel with live output and actions for the bundled measured-profile demo, real test suite, repair, and stop. The optional GUI input sets the demo memory limit in GiB. Use `./cli.sh` for CLI-only operation, `./demo.sh` for the bundled example, and `./test.sh` to run the same tests outside the GUI.

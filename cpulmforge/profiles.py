@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import asdict, dataclass
+from math import isfinite
 from statistics import median
 import shlex
 
@@ -15,18 +16,31 @@ class Sample:
     run_id: str = ""
 
     def __post_init__(self) -> None:
-        if not self.model_path.strip():
-            raise ValueError("model_path cannot be empty")
+        if not isinstance(self.model_path, str) or not self.model_path.strip():
+            raise ValueError("model_path must be non-empty text")
+        if not isinstance(self.run_id, str):
+            raise ValueError("run_id must be text")
         for name in ("threads", "context", "generated_tokens", "peak_rss_bytes", "batch"):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
                 raise ValueError(f"{name} must be a positive integer")
-        if isinstance(self.seconds, bool) or not isinstance(self.seconds, (int, float)) or self.seconds <= 0:
-            raise ValueError("seconds must be positive")
+        if (
+            isinstance(self.seconds, bool)
+            or not isinstance(self.seconds, (int, float))
+            or not isfinite(self.seconds)
+            or self.seconds <= 0
+        ):
+            raise ValueError("seconds must be a positive finite number")
 
     @property
     def tokens_per_second(self) -> float:
-        return self.generated_tokens / self.seconds
+        try:
+            value = self.generated_tokens / self.seconds
+        except OverflowError as exc:
+            raise ValueError("tokens_per_second must be finite") from exc
+        if not isfinite(value):
+            raise ValueError("tokens_per_second must be finite")
+        return value
 
     @property
     def key(self) -> tuple[str, int, int, int]:
@@ -70,8 +84,17 @@ def aggregate(samples: list[Sample]) -> tuple[Profile, ...]:
     return tuple(sorted(profiles, key=lambda item: (item.model_path, item.threads, item.context, item.batch)))
 
 def select_profile(samples: list[Sample], *, memory_limit_bytes: int, minimum_tps: float = 0.0, executable: str = "llama-server") -> Selection:
-    if memory_limit_bytes <= 0 or minimum_tps < 0:
-        raise ValueError("memory_limit_bytes must be positive and minimum_tps non-negative")
+    if isinstance(memory_limit_bytes, bool) or not isinstance(memory_limit_bytes, int) or memory_limit_bytes <= 0:
+        raise ValueError("memory_limit_bytes must be a positive integer")
+    if (
+        isinstance(minimum_tps, bool)
+        or not isinstance(minimum_tps, (int, float))
+        or not isfinite(minimum_tps)
+        or minimum_tps < 0
+    ):
+        raise ValueError("minimum_tps must be a finite non-negative number")
+    if not isinstance(executable, str) or not executable.strip():
+        raise ValueError("executable must be non-empty text")
     eligible: list[Profile] = []
     rejected: list[dict[str, object]] = []
     for profile in aggregate(samples):

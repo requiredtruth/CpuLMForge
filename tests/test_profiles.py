@@ -22,5 +22,27 @@ class ProfileTests(unittest.TestCase):
         self.assertIsNone(result.selected)
         self.assertEqual(len(result.rejected[0]["reasons"]), 2)
 
+    def test_rejects_non_finite_measurements(self) -> None:
+        for seconds in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(seconds=seconds):
+                with self.assertRaisesRegex(ValueError, "positive finite"):
+                    self.sample(4, 40, seconds, 3000, "a")
+        sample = self.sample(4, 10**1000, 5e-324, 3000, "a")
+        with self.assertRaisesRegex(ValueError, "tokens_per_second must be finite"):
+            aggregate([sample])
+
+    def test_rejects_non_text_identifiers(self) -> None:
+        with self.assertRaisesRegex(ValueError, "model_path must be non-empty text"):
+            Sample(7, 4, 2048, 40, 10, 3000)  # type: ignore[arg-type]
+        with self.assertRaisesRegex(ValueError, "run_id must be text"):
+            Sample("model.gguf", 4, 2048, 40, 10, 3000, run_id=7)  # type: ignore[arg-type]
+
+    def test_rejects_non_finite_selection_constraints(self) -> None:
+        sample = self.sample(4, 40, 10, 3000, "a")
+        with self.assertRaisesRegex(ValueError, "minimum_tps must be a finite"):
+            select_profile([sample], memory_limit_bytes=4000, minimum_tps=float("nan"))
+        with self.assertRaisesRegex(ValueError, "memory_limit_bytes must be a positive integer"):
+            select_profile([sample], memory_limit_bytes=True)  # type: ignore[arg-type]
+
 if __name__ == "__main__":
     unittest.main()
