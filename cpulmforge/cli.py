@@ -1,5 +1,6 @@
 from __future__ import annotations
 import argparse, json
+from math import isfinite
 from pathlib import Path
 import sys
 from .profiles import Sample, select_profile
@@ -13,10 +14,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fail-if-none", action="store_true")
     args = parser.parse_args(argv)
     try:
+        if not isfinite(args.memory_gib) or args.memory_gib <= 0:
+            raise ValueError("memory_gib must be a positive finite number")
         rows = [json.loads(line) for line in Path(args.samples).read_text(encoding="utf-8").splitlines() if line.strip()]
         selection = select_profile([Sample(**row) for row in rows], memory_limit_bytes=int(args.memory_gib * 1024**3), minimum_tps=args.minimum_tps, executable=args.executable)
     except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
         print(f"cpulmforge: {exc}", file=sys.stderr)
         return 2
-    print(json.dumps(selection.to_dict(), indent=2, sort_keys=True))
+    print(json.dumps(selection.to_dict(), allow_nan=False, indent=2, sort_keys=True))
     return 1 if args.fail_if_none and selection.selected is None else 0
